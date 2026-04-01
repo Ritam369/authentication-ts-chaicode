@@ -1,4 +1,5 @@
 import jwt from 'jsonwebtoken'
+import ApiError from './api-error';
 
 export interface UserTokenPayload{
     id: string
@@ -13,6 +14,6 @@ export function verifyUserToken(token: string){
         const decodedPayload = jwt.verify(token, process.env.JWT_SECRET as string) as UserTokenPayload;
         return decodedPayload;
     } catch (error) {
-        throw new Error("Invalid token");
+        throw ApiError.unauthorized("Invalid token");
     }
 }

@@ -8,22 +8,19 @@ import { id } from "zod/v4/locales";
 import { safeParseAsync } from "zod";
 import { createUserToken, verifyUserToken } from "./utils/token";
 import type { UserTokenPayload } from "./utils/token"; 
+import ApiError from "./utils/api-error";
+import ApiResponse from "./utils/api-response";
 
 const registerHandler = async (req: Request, res: Response) => {
   const validationResult = await signupPayloadValidation.safeParseAsync(req.body);
   if(!validationResult.success){
-    return res
-            .status(400)
-            .json({
-                message: "Payload Validation failed" , 
-                error: validationResult.error.issues
-            });
+    throw ApiError.badRequest("Payload Validation failed");
   }
   const {firstName, lastName, email, password } = validationResult.data;
   const existingUser = await db.select().from(usersTable).where(eq(usersTable.email, email));
 
   if(existingUser.length > 0){
-    return res.status(400).json({error: "Duplicate Entry" ,message: `User already exists with this email: ${email}`})
+    throw ApiError.badRequest(`User already exists with this email: ${email}`);
   }
 
   const salt = randomBytes(32).toString('hex');
@@ -37,36 +34,31 @@ const registerHandler = async (req: Request, res: Response) => {
     salt
   }).returning({ id: usersTable.id })
 
-  return res.status(201).json({message: "User Created Successfully", data: {id : result?.id}})
+  throw ApiResponse.created(res, "User Created Successfully", {id : result?.id});
 };
 
 const loginHandler = async (req: Request, res: Response) => {
     const validationResult = await loginPayloadValidation.safeParseAsync(req.body);
     if(!validationResult.success){
-        return res
-                .status(400)
-                .json({
-                    message: "Payload Validation failed" , 
-                    error: validationResult.error.issues
-                });
+        throw ApiError.badRequest("Payload Validation failed");
     }
     const { email, password } = validationResult.data;
     const [selectUser] = await db.select().from(usersTable).where(eq(usersTable.email, email));
 
     if(!selectUser){
-        return res.status(404).json({error: "User not found" ,message: `User not found with this email: ${email}`})
+        throw ApiError.notfound(`User not found with this email: ${email}`)
     }
 
     const salt = selectUser.salt!
     const hash = createHmac('sha256', salt).update(password).digest('hex');
 
     if(hash !== selectUser.password){
-        return res.status(400).json({error: "Invalid Credentials", message: "Email or Password did not match"})
+        throw ApiError.badRequest("Email or Password did not match");
     }
 
     const token = createUserToken({ id: selectUser.id });
 
-    return res.status(200).json({message: "Login Successful", data: {token}})
+    throw ApiResponse.success(res, "Login Successful", {token})
 
 }
 
