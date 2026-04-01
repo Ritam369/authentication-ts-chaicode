@@ -6,6 +6,7 @@ import { usersTable } from "../../db/schema";
 import { eq } from "drizzle-orm";
 import { id } from "zod/v4/locales";
 import { safeParseAsync } from "zod";
+import { createUserToken, verifyUserToken } from "./utils/token";
 
 const registerHandler = async (req: Request, res: Response) => {
   const validationResult = await signupPayloadValidation.safeParseAsync(req.body);
@@ -62,9 +63,9 @@ const loginHandler = async (req: Request, res: Response) => {
         return res.status(400).json({error: "Invalid Credentials", message: "Email or Password did not match"})
     }
 
-    //TODO: Need to generate token
+    const token = createUserToken({ id: selectUser.id });
 
-    return res.status(200).json({message: "Login Successful", data: {token: 1}})
+    return res.status(200).json({message: "Login Successful", data: {token}})
 
 }
 
