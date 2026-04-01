@@ -7,6 +7,7 @@ import { eq } from "drizzle-orm";
 import { id } from "zod/v4/locales";
 import { safeParseAsync } from "zod";
 import { createUserToken, verifyUserToken } from "./utils/token";
+import type { UserTokenPayload } from "./utils/token"; 
 
 const registerHandler = async (req: Request, res: Response) => {
   const validationResult = await signupPayloadValidation.safeParseAsync(req.body);
@@ -69,4 +70,17 @@ const loginHandler = async (req: Request, res: Response) => {
 
 }
 
-export {registerHandler, loginHandler}
+const handleMe = async (req: Request, res: Response) => {
+    // @ts-ignore
+    const {id} = req.user! as UserTokenPayload
+
+    const [userResult] = await db.select().from(usersTable).where(eq(usersTable.id, id))
+
+    return res.json({
+        firstName: userResult?.firstName,
+        lastName: userResult?.lastName,
+        email: userResult?.email
+    })
+}
+
+export {registerHandler, loginHandler, handleMe}
