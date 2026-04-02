@@ -1,15 +1,41 @@
 # authentication-system-ts
 
-To install dependencies:
+A TypeScript-based authentication system built with modern web technologies.
+
+## Tech Stack
+
+- **Runtime**: [Bun](https://bun.com) - Fast all-in-one JavaScript runtime
+- **Language**: TypeScript 5
+- **Backend Framework**: Express.js 5.x
+- **Database**: PostgreSQL 17 with [Drizzle ORM](https://orm.drizzle.team/)
+- **Authentication**: JWT (JSON Web Tokens)
+- **Validation**: Zod
+- **Environment Management**: dotenv
+
+## Quick Start
+
+Install dependencies:
 
 ```bash
 bun install
 ```
 
-To run:
+Run development server:
 
 ```bash
-bun run index.ts
+bun run dev
 ```
 
-This project was created using `bun init` in bun v1.3.3. [Bun](https://bun.com) is a fast all-in-one JavaScript runtime.
+Build:
+
+```bash
+bun run build
+```
+
+Database:
+
+```bash
+bun db:generate   # Generate migrations
+bun db:migrate    # Run migrations
+bun studio        # Open Drizzle Studio
+```
