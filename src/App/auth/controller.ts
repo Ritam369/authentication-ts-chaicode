@@ -14,7 +14,7 @@ import ApiResponse from "./utils/api-response";
 const registerHandler = async (req: Request, res: Response) => {
   const validationResult = await signupPayloadValidation.safeParseAsync(req.body);
   if(!validationResult.success){
-    throw ApiError.badRequest("Payload Validation failed");
+    throw ApiError.badRequest("Payload Validation failed; first name, email and password of minimum 8characters is required");
   }
   const {firstName, lastName, email, password } = validationResult.data;
   const existingUser = await db.select().from(usersTable).where(eq(usersTable.email, email));
