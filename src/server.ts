@@ -11,7 +11,7 @@ async function main() {
             console.log(`server running on port ${port}`)
         })
     } catch (error) {
-        throw ApiError.serverError("Error while starting http server")
+        throw ApiError.internalError("Error while starting http server")
     }
 }
 

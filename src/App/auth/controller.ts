@@ -1,26 +1,24 @@
-import type { Request, Response } from "express";
+import type { Request, Response, NextFunction } from "express";
 import {randomBytes, createHmac} from "node:crypto"
 import { loginPayloadValidation, signupPayloadValidation } from "./validator";
 import { db } from "../../db";
 import { usersTable } from "../../db/schema";
 import { eq } from "drizzle-orm";
-import { id } from "zod/v4/locales";
-import { safeParseAsync } from "zod";
 import { createUserToken, verifyUserToken } from "./utils/token";
 import type { UserTokenPayload } from "./utils/token"; 
-import ApiError from "./utils/api-error";
+import ApiError from "./utils/api-error.js";
 import ApiResponse from "./utils/api-response";
 
-const registerHandler = async (req: Request, res: Response) => {
+const registerHandler = async (req: Request, res: Response, next: NextFunction) => {
   const validationResult = await signupPayloadValidation.safeParseAsync(req.body);
   if(!validationResult.success){
-    throw ApiError.badRequest("Payload Validation failed; first name, email and password of minimum 8characters is required");
+    return next(ApiError.badRequest("Payload Validation failed", validationResult.error.issues));
   }
   const {firstName, lastName, email, password } = validationResult.data;
   const existingUser = await db.select().from(usersTable).where(eq(usersTable.email, email));
 
   if(existingUser.length > 0){
-    throw ApiError.badRequest(`User already exists with this email: ${email}`);
+    return next(ApiError.conflict(`User already exists with this email: ${email}`));
   }
 
   const salt = randomBytes(32).toString('hex');
@@ -34,32 +32,31 @@ const registerHandler = async (req: Request, res: Response) => {
     salt
   }).returning({ id: usersTable.id })
 
-  throw ApiResponse.created(res, "User Created Successfully", {id : result?.id});
+  return ApiResponse.created(res, "User Created Successfully", {id : result?.id});
 };
 
-const loginHandler = async (req: Request, res: Response) => {
+const loginHandler = async (req: Request, res: Response, next: NextFunction) => {
     const validationResult = await loginPayloadValidation.safeParseAsync(req.body);
     if(!validationResult.success){
-        throw ApiError.badRequest("Payload Validation failed");
+        return next(ApiError.badRequest("Payload Validation failed", validationResult.error.issues));
     }
     const { email, password } = validationResult.data;
     const [selectUser] = await db.select().from(usersTable).where(eq(usersTable.email, email));
 
     if(!selectUser){
-        throw ApiError.notfound(`User not found with this email: ${email}`)
+        return next(ApiError.notFound(`User not found with this email: ${email}`));
     }
 
     const salt = selectUser.salt!
     const hash = createHmac('sha256', salt).update(password).digest('hex');
 
     if(hash !== selectUser.password){
-        throw ApiError.badRequest("Email or Password did not match");
+        return next(ApiError.badRequest("Email or Password did not match"));
     }
 
     const token = createUserToken({ id: selectUser.id });
 
-    throw ApiResponse.success(res, "Login Successful", {token})
-
+    return ApiResponse.success(res, "Login Successful", {token});
 }
 
 const handleMe = async (req: Request, res: Response) => {

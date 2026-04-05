@@ -8,26 +8,28 @@ export function authenticationMiddleware() {
         if (!header) return next()
 
         if (!header.startsWith('Bearer ')) {
-            throw ApiError.badRequest("authorization header must start with Bearer")
+            return next(ApiError.badRequest("authorization header must start with Bearer"));
         }
 
         const token = header.split(' ')[1]
 
-        if (!token) throw ApiError.badRequest("authorization header must start with Bearer and followed by token")
+        if (!token) return next(ApiError.badRequest("authorization header must start with Bearer and followed by token"));
 
-        const user = verifyUserToken(token)
-
-        // @ts-ignore
-        req.user = user
-
-        next()
+        try {
+            const user = verifyUserToken(token);
+            // @ts-ignore
+            req.user = user;
+            next();
+        } catch (error) {
+            return next(ApiError.unauthorized("Invalid token"));
+        }
     }
 }
 
 export function restrictToAuthenticatedUser() {
     return function (req: Request, res: Response, next: NextFunction) {
         // @ts-ignore
-        if (!req.user) throw ApiError.unauthorized('Authentication Required')
+        if (!req.user) return next(ApiError.unauthorized('Authentication Required'));
         return next()
     }
 }

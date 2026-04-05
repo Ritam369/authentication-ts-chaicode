@@ -10,10 +10,6 @@ export function createUserToken(payload: UserTokenPayload) {
 }
 
 export function verifyUserToken(token: string){
-    try {
-        const decodedPayload = jwt.verify(token, process.env.JWT_SECRET as string) as UserTokenPayload;
-        return decodedPayload;
-    } catch (error) {
-        throw ApiError.unauthorized("Invalid token");
-    }
+    const decodedPayload = jwt.verify(token, process.env.JWT_SECRET as string) as UserTokenPayload;
+    return decodedPayload;
 }

@@ -1,7 +1,7 @@
 import express from "express";
 import type { Express } from "express";
 import router from "./auth/routes"
-// import { authenticationMiddleware } from "./middleware/auth.middleware";
+import { errorHandler } from "./middleware/error.middleware";
 
 export function createApplication(): Express {
     const app = express();
@@ -16,6 +16,9 @@ export function createApplication(): Express {
     });
 
     app.use("/auth", router)
+
+    //Error Handler (must be last)
+    app.use(errorHandler)
 
     return app;
 }
